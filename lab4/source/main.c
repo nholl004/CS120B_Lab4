@@ -12,10 +12,12 @@
 #include "simAVRHeader.h"
 #endif
 
-enum states {start, init, A0Press, A1Press, A0A1Press, cntReset} state;
-unsigned char C = 0x00;
+enum states {start, init, x, y, z, check, unlock, lock} state;
+unsigned char tmp1 = 0x00;
 unsigned char cnt = 0x00;
-unsigned char cnti = 0x00;
+unsigned char tmp2 = 0x00;
+unsigned char B = 0x00;
+unsigned char C = 0x00;
 void tick()
 {
 	
@@ -24,48 +26,68 @@ void tick()
 			state = init;
 			break;
 		case init:
-			if(PINA == 0x00){ state = init; } else if(PINA == 0x01){ state = A0Press;} else if(PINA == 0x02){ state = A1Press;} else if(PINA == 0x03){ state = A0A1Press;}
+			if(PINA == 0x00){ state = init; } else if(PINA == 0x01){ state = x;} else if(PINA == 0x02){ state = y;} else if(PINA == 0x04){ state = z;}
 			break;
-		case A0Press:
-			if(PINA == 0x01){ state = A0Press; } else if(PINA == 0x00){ state = cntReset;}
+		case x:
+			state = check; 
                         break;
-		case A1Press:
-			if(PINA == 0x02){ state = A1Press; } else if(PINA == 0x00){ state = cntReset;}
+		case y:
+			state = check;
 			break;
-		case A0A1Press:
-			if(PINA == 0x03){ state = A0A1Press; } else if((PINA == 0x00)||(PINA == 0x01)||(PINA == 0x02)){ state = cntReset;}
+		case z:
+			state = check;
 			break;
-		case cntReset:
-			state = init;
+		case check:
+			if((tmp1 == 0x04)&& (tmp2 == 0x02)&& (PINA == 0x00)){ state = unlock;}else if(cnt > 1){ state = init; }else if(PINA == 0x01){ state = x; } else if(PINA == 0x02){state = y;} else if(PINA == 0x04){ state = z;}
+			break;
+		case unlock:
+			if(PINA == 0x80){state = lock;}else if(PINA == 0x00){ state = unlock;}
                         break;
+		case lock:
+			state = lock;
+			break;
 		default:
 			break;
 	}
 	switch(state){
 		case init:
-			if(cnti == 0){ C=0x07; cnti++;}
-			break;
-		case A0Press:
-			if((cnt == 0)&& (C < 0x09)){C = C + 1; cnt++;}
-			break;
-		case A1Press:
-			if((cnt == 0)&& (C > 0x00)){ C = C - 1; cnt++;}
-			break;
-		case A0A1Press:
-			if(cnt == 0){C = 0; cnt++;}
-			break;
-		case cntReset:
+			C = 1;
 			cnt = 0;
+			break;
+		case x:
+			C = 2;
+			cnt++;
+			break;
+		case y:
+			C = 3;
+			if(cnt == 1){tmp2 = 0x02; cnt++;}else{ cnt++;}
+			break;
+		case z:
+			C = 4;
+			if(cnt == 0){tmp1 = 0x04; cnt++;}else{ cnt++;} 
+			break;
+		case check:
+			C = 5;
+			break;
+		case unlock:
+			C = 6;
+			B = 0x01;
+			break;
+		case lock:
+			C = 7;
+			B = 0x00;
 			break;
 		default:
 			break;
 	}
+	PORTB = B;
 	PORTC = C;
 }
 
 int main(void) {
     /* Insert DDR and PORT initializations */
 	DDRA = 0x00; PORTA = 0xFF;
+	DDRB = 0xFF; PORTB = 0x00;
 	DDRC = 0xFF; PORTC = 0x00;
 
 	state = start;

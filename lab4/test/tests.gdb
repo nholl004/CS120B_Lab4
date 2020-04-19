@@ -27,30 +27,59 @@ echo ======================================================\n
 echo Running all tests..."\n\n
 
 # Add tests below
-test "PINA: 0x00 => PORTC: 0x07, state: init"
+test "PINA: 0x00 => PINAB: 0x00, state: init"
 set state = start
 setPINA 0x00
 continue 2
-expectPORTC 0x07
+expectPORTB 0x00
 checkResult
-                                                                                                                                                                                                                                             test "PINA: 0x00, 0x03, 0x00, 0x01, 0x00, 0x01, 0x00, 0x02 => PORTC: 0x01, state: A1Press"
-set state = start 
+                                                                                                                                                                                                                                             test "PINA: 0x00, 0x01, 0x01,0x04,0x02,0x00 => PORTB: 0x01, state: unlock"
+set state = start
 setPINA 0x00
 continue 2
-setPINA 0x03
-continue 2
-setPINA 0x00
+setPINA 0x01
 continue 2
 setPINA 0x01
 continue 2
 setPINA 0x00
 continue 2
-setPINA 0x01
-continue 2
-setPINA 0x00
+setPINA 0x04
 continue 2
 setPINA 0x02
 continue 2
+setPINA 0x00
+continue 2
+expectPORTB 0x01
+expectPORTC 0x06
+checkResult
+
+test "PINA: 0x00, 0x04, 0x02, 0x00, 0x80 => PORTB: 0x00, state: lock"
+set state = start 
+setPINA 0x00
+continue 2
+setPINA 0x04
+continue 2
+setPINA 0x02
+continue 2
+setPINA 0x00
+continue 2
+setPINA 0x80
+continue 2
+expectPORTB 0x00
+expectPORTC 0x07
+checkResult
+
+test "PINA: 0x00, 0x04, 0x01, 0x00 => PORTB: 0x00, state:init"
+set state = start
+setPINA 0x00
+continue 2
+setPINA 0x04
+continue 2
+setPINA 0x01
+continue 2
+setPINA 0x00
+continue 2
+expectPORTB 0x00
 expectPORTC 0x01
 checkResult
 # Report on how many tests passed/tests ran
